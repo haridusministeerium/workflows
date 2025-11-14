@@ -1,7 +1,7 @@
-# this workflow doesn't use GH apps nor PATs, but the GITHUB_TOKEN
-# provided by pipeline env itself
+# this workflow doesn't use the automatically generated GITHUB_TOKEN, but a GH App
+# token (similar to PATs).
 #
-# to refernece otput from previous jobs' output:   ${{needs.job1.outputs.output1}}
+# to refernece output from previous jobs' output:   ${{needs.job1.outputs.output1}}
 name: Publish Python 🐍 distribution 📦 to PyPI and TestPyPI
 
 on:
@@ -10,12 +10,6 @@ on:
       #config-path:
         #required: true
         #type: string
-    #secrets:
-      #token:
-        #required: true
-
-#permissions:
-  #contents: write
 
 jobs:
   build-test:
@@ -62,9 +56,6 @@ jobs:
     needs:
     - build-test
     runs-on: ubuntu-latest
-    #not needed, as calling workflow already provides write perms:
-    #permissions:
-      #contents: write
     steps:
     - uses: actions/create-github-app-token@v2
       id: app-token
