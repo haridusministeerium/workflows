@@ -94,8 +94,6 @@ jobs:
         #git config --global user.name 'workflow-bot'
         #git config --global user.email 'ci@github'
     - name: Install zestreleaser & cut a tag
-      env:
-        GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
       run: |
         pip install zest.releaser
         fullrelease --no-input
