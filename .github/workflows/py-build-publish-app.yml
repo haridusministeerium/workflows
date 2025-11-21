@@ -23,23 +23,45 @@ jobs:
     - uses: actions/checkout@v5
       with:
         persist-credentials: false
+
+    # from https://github.com/actions/runner-images/discussions/8135
+    #- name: List all available programs
+      #run: |
+        #IFS=:
+        #for dir in $PATH
+        #do
+            #for file in $dir/*
+            #do
+                #if [ -x $file ]
+                #then
+                    #echo $file
+                #fi
+            #done
+        #done
+
     - name: Set up Python
       uses: actions/setup-python@v5
       with:
         python-version: "3.x"
+
     - name: install dev/test deps
       run: |
-        pip install '.[dev]'
+        # crudini not avail in runners...
+        sudo apt-get -y --no-upgrade install crudini
+        if crudini --get pyproject.toml project.optional-dependencies | grep -Eq '^dev\b'; then pip install '.[dev]'; fi
+        if crudini --get pyproject.toml project.optional-dependencies | grep -Eq '^test\b'; then pip install '.[test]'; fi
+      #shell: bash
     #- name: Lint
       #run: |
-        #command -v ruff >/dev/null && echo have ruff
+        #if command -v ruff >/dev/null; then ruff check; fi
         ## stop the build if there are Python syntax errors or undefined names:
         #ruff check --select=E9,F63,F7,F82
         ## exit-zero treats all errors as warnings:
         #ruff check --exit-zero --statistics
     - name: Test
       run: |
-        pytest
+        #if find . -mindepth 1 -maxdepth 1 -type d -name tests | grep -q .; then echo "tests/ dir found, running pytest..."; pytest; fi
+        if command -v pytest >/dev/null; then pytest; fi
     - name: Install pypa/build & build the binary wheel/src tarball
       run: |
         pip install build
