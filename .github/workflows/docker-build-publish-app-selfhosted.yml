@@ -1,0 +1,61 @@
+# this workflow doesn't use the automatically generated GITHUB_TOKEN, but a GH App
+# token (similar to PATs).
+#
+# to refernece output from previous jobs' output:   ${{needs.job1.outputs.output1}}
+name: Build & deploy docker image
+
+on:
+  workflow_call:
+    #inputs:
+      #config-path:
+        #required: true
+        #type: string
+    inputs:
+      registry:
+        type: string
+        default: 'docker.io'
+      userapp:
+        required: true
+        type: string
+      #app:
+        #required: true
+        #type: string
+
+jobs:
+  docker:
+    runs-on: self-hosted
+    # decrease our perms:
+    permissions:
+      contents: read
+    steps:
+    - uses: actions/checkout@v5
+      with:
+        persist-credentials: false
+
+    - name: Login to Docker Hub
+      uses: docker/login-action@v4
+      with:
+        username: ${{ vars.DOCKERHUB_USERNAME }}
+        password: ${{ secrets.DOCKERHUB_TOKEN }}
+    #- name: Login to GitHub Container Registry
+    #  uses: docker/login-action@v4
+    #  with:
+    #    registry: ghcr.io
+    #    username: ${{ github.repository_owner }}
+    #    password: ${{ secrets.GITHUB_TOKEN }}
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v4
+      # note following bit needed w/ self-hosted runners, see https://github.com/myoung34/docker-github-actions-runner/issues/280
+      with:
+        install: true
+        driver-opts: network=host
+        config: .github/buildkit.toml
+    - name: Build and push
+      uses: docker/build-push-action@v7
+      with:
+        push: true
+        tags: |
+          ${{ inputs.registry }}${{ inputs.userapp }}:latest
+          # to _also_ push to ghcr:
+          # ghcr.io/user/app:latest
+
