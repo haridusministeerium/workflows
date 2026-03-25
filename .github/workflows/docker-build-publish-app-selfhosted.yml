@@ -6,10 +6,6 @@ name: Build & deploy docker image
 
 on:
   workflow_call:
-    #inputs:
-      #config-path:
-        #required: true
-        #type: string
     inputs:
       registry:
         type: string
@@ -17,13 +13,13 @@ on:
       userapp:
         required: true
         type: string
-      #app:
-        #required: true
-        #type: string
+      runs-on:
+        type: string
+        default: 'ubuntu-latest'
 
 jobs:
   docker:
-    runs-on: self-hosted
+    runs-on: ${{ inputs.runs-on }}
     # decrease our perms:
     permissions:
       contents: read
@@ -54,8 +50,8 @@ jobs:
       uses: docker/build-push-action@v7
       with:
         push: true
+        # to _also_ push to ghcr, add this to 'tags':
+        # ghcr.io/user/app:latest
         tags: |
-          ${{ inputs.registry }}${{ inputs.userapp }}:latest
-          # to _also_ push to ghcr:
-          # ghcr.io/user/app:latest
+          ${{ inputs.registry }}/${{ inputs.userapp }}:latest
 
