@@ -67,11 +67,11 @@ jobs:
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v4
       # note following [with] block needed w/ self-hosted runners per https://github.com/myoung34/docker-github-actions-runner/issues/280
-      #with:
+      with:
+        driver-opts: |
+          network=host
       #  install: true
       #  config: .github/buildkit.toml
-      #  driver-opts: |
-      #    network=host
 
     # https://github.com/docker/metadata-action
     - name: Docker meta
