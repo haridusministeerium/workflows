@@ -19,7 +19,7 @@ on:
         default: 'ubuntu-latest'
       build-args:
         type: string
-        default: ''
+        default: 'PLACEHOLDER_BUILD_ARG=placeholder_value'
       target:
         type: string
         default: ''
@@ -31,7 +31,7 @@ jobs:
     permissions:
       contents: read
     steps:
-    - uses: actions/create-github-app-token@v2
+    - uses: https://github.com/actions/create-github-app-token@v2
       if: ${{ inputs.registry == 'ghcr.io' }}
       id: app-token
       with:
@@ -82,6 +82,7 @@ jobs:
           ${{ inputs.image }}
         tags: |
           type=ref,event=tag,enable=true,priority=600,prefix=,suffix=
+          type=raw,value=latest,enable={{is_default_branch}}
         #type=ref,event=branch
         #type=ref,event=pr
         #type=semver,pattern={{version}}
@@ -99,7 +100,6 @@ jobs:
         tags: ${{ steps.meta.outputs.tags }}
         annotations: ${{ steps.meta.outputs.annotations }}
         labels: ${{ steps.meta.outputs.labels }}
-        build-args: 
-          - "${{ inputs.build-args }}"
+        build-args: "${{ inputs.build-args }}"
         target: ${{ inputs.target }}
 
