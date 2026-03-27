@@ -9,13 +9,20 @@ on:
     inputs:
       registry:
         type: string
-        default: 'docker.io'
-      userapp:
-        required: true
+        default: 'docker.io'  # ghcr.io,
+      image:
+        #required: true
+        default: ${{ github.REPOSITORY }}
         type: string
       runs-on:
         type: string
         default: 'ubuntu-latest'
+      build-args:
+        type: string
+        default: ''
+      target:
+        type: string
+        default: ''
 
 jobs:
   docker:
@@ -24,34 +31,75 @@ jobs:
     permissions:
       contents: read
     steps:
-    - uses: actions/checkout@v5
+    - uses: actions/create-github-app-token@v2
+      if: ${{ inputs.registry == 'ghcr.io' }}
+      id: app-token
       with:
-        persist-credentials: false
+        app-id: ${{ vars.APP_ID }}
+        private-key: ${{ secrets.APP_KEY }}
+
+    - name: Login to GitHub Container Registry
+      if: ${{ inputs.registry == 'ghcr.io' }}
+      uses: docker/login-action@v4
+      with:
+        registry: ghcr.io
+        username: ${{ github.actor }}
+        #username: ${{ github.repository_owner }}
+        password: ${{ steps.app-token.outputs.token }}
+        #password: ${{ secrets.GITHUB_TOKEN }}
+
+    # note per https://github.com/docker/build-push-action#git-context actions/checkout is not needed
+    #- uses: actions/checkout@v5
+    #  if: ${{ inputs.registry == 'ghcr.io' }}
+    #  with:
+    #    token: ${{ steps.app-token.outputs.token }}
+    #    ref: ${{ github.head_ref }}
+    #    # Make sure the value of GITHUB_TOKEN will not be persisted in repo's config:
+    #    persist-credentials: false
 
     - name: Login to Docker Hub
+      if: ${{ inputs.registry == 'docker.io' }}
       uses: docker/login-action@v4
       with:
         username: ${{ vars.DOCKERHUB_USERNAME }}
         password: ${{ secrets.DOCKERHUB_TOKEN }}
-    #- name: Login to GitHub Container Registry
-    #  uses: docker/login-action@v4
-    #  with:
-    #    registry: ghcr.io
-    #    username: ${{ github.repository_owner }}
-    #    password: ${{ secrets.GITHUB_TOKEN }}
+
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v4
-      # note following bit needed w/ self-hosted runners, see https://github.com/myoung34/docker-github-actions-runner/issues/280
+      # note following [with] block needed w/ self-hosted runners per https://github.com/myoung34/docker-github-actions-runner/issues/280
+      #with:
+      #  install: true
+      #  config: .github/buildkit.toml
+      #  driver-opts: |
+      #    network=host
+
+    # https://github.com/docker/metadata-action
+    - name: Docker meta
+      id: meta
+      uses: docker/metadata-action@v6
       with:
-        install: true
-        driver-opts: network=host
-        config: .github/buildkit.toml
+        images: |
+          ${{ inputs.image }}
+        tags: |
+          type=ref,event=tag,enable=true,priority=600,prefix=,suffix=
+        #type=ref,event=branch
+        #type=ref,event=pr
+        #type=semver,pattern={{version}}
+        #type=semver,pattern={{major}}.{{minor}}
+  
+    # note if pushing to a local unauthenticated registry, then no login step is
+    # needed; see https://docs.docker.com/build/ci/github-actions/local-registry/
     - name: Build and push
       uses: docker/build-push-action@v7
       with:
+        #push: ${{ github.event_name != 'pull_request' }}
         push: true
-        # to _also_ push to ghcr, add this to 'tags':
-        # ghcr.io/user/app:latest
-        tags: |
-          ${{ inputs.registry }}/${{ inputs.userapp }}:latest
+        #tags: |
+        #  ${{ inputs.registry }}/${{ inputs.image }}:latest
+        tags: ${{ steps.meta.outputs.tags }}
+        annotations: ${{ steps.meta.outputs.annotations }}
+        labels: ${{ steps.meta.outputs.labels }}
+        build-args: 
+          - "${{ inputs.build-args }}"
+        target: ${{ inputs.target }}
 
