@@ -31,22 +31,24 @@ jobs:
     permissions:
       contents: read
     steps:
-    - uses: https://github.com/actions/create-github-app-token@v2
-      if: ${{ inputs.registry == 'ghcr.io' }}
-      id: app-token
-      with:
-        app-id: ${{ vars.APP_ID }}
-        private-key: ${{ secrets.APP_KEY }}
+    # TODO: fully qualified url is not supported by github Actions,
+    #       and non-fully-qualified is not supported by gitea/forgejo
+    #- uses: https://github.com/actions/create-github-app-token@v2
+    #  if: ${{ inputs.registry == 'ghcr.io' }}
+    #  id: app-token
+    #  with:
+    #    app-id: ${{ vars.APP_ID }}
+    #    private-key: ${{ secrets.APP_KEY }}
 
-    - name: Login to GitHub Container Registry
-      if: ${{ inputs.registry == 'ghcr.io' }}
-      uses: docker/login-action@v4
-      with:
-        registry: ghcr.io
-        username: ${{ github.actor }}
-        #username: ${{ github.repository_owner }}
-        password: ${{ steps.app-token.outputs.token }}
-        #password: ${{ secrets.GITHUB_TOKEN }}
+    #- name: Login to GitHub Container Registry
+    #  if: ${{ inputs.registry == 'ghcr.io' }}
+    #  uses: docker/login-action@v4
+    #  with:
+    #    registry: ghcr.io
+    #    username: ${{ github.actor }}
+    #    #username: ${{ github.repository_owner }}
+    #    password: ${{ steps.app-token.outputs.token }}
+    #    #password: ${{ secrets.GITHUB_TOKEN }}
 
     # note per https://github.com/docker/build-push-action#git-context actions/checkout is not needed
     #- uses: actions/checkout@v5
