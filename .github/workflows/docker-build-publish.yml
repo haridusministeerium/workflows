@@ -19,7 +19,7 @@ on:
         default: 'ubuntu-latest'
       build-args:
         type: string
-        default: 'PLACEHOLDER_BUILD_ARG=placeholder_value'
+        default: '[]'
       target:
         type: string
         default: ''
